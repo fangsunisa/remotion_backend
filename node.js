@@ -1,4 +1,3 @@
-
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
@@ -194,6 +193,35 @@ app.post('/api/patient/session', (req, res) => {
 // 2. API สำหรับเว็บฝั่งหมอ (Doctor Web API)
 // ==========================================
 
+// API ดึงข้อมูลโปรไฟล์หมอ (GET)
+app.get('/api/doctor/profile/:staffId', (req, res) => {
+  const staffId = req.params.staffId;
+  const query = 'SELECT * FROM medical_staff WHERE StaffID = ?';
+  
+  db.query(query, [staffId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) return res.status(404).json({ message: 'ไม่พบข้อมูลหมอ' });
+    res.json(results[0]);
+  });
+});
+
+// API อัปเดตข้อมูลโปรไฟล์หมอ (PUT)
+app.put('/api/doctor/profile/:staffId', (req, res) => {
+  const staffId = req.params.staffId;
+  const { licenseNumber, firstName, lastName, department, position } = req.body;
+
+  const query = `
+    UPDATE medical_staff 
+    SET License_Number = ?, First_Name = ?, Last_Name = ?, Department = ?, Position = ?
+    WHERE StaffID = ?
+  `;
+
+  db.query(query, [licenseNumber, firstName, lastName, department, position, staffId], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'อัปเดตข้อมูลโปรไฟล์สำเร็จ!' });
+  });
+});
+
 // เพิ่มข้อมูลผู้ป่วย
 app.post('/api/doctor/add-patient', (req, res) => {
   const {
@@ -201,6 +229,7 @@ app.post('/api/doctor/add-patient', (req, res) => {
     baselineAssessment,
     medicalCondition,
     nationalId,
+    phone,
     firstName,
     lastName,
     gender,
@@ -218,6 +247,7 @@ app.post('/api/doctor/add-patient', (req, res) => {
       Baseline_Assessment,
       Medical_Condition,
       National_ID,
+      Phone,
       First_Name,
       Last_Name,
       Gender,
@@ -237,6 +267,7 @@ app.post('/api/doctor/add-patient', (req, res) => {
       baselineAssessment,
       medicalCondition,
       nationalId,
+      phone,
       firstName,
       lastName,
       gender,
