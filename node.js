@@ -26,6 +26,50 @@ db.connect((err) => {
 });
 
 // ==========================================
+// 0. API สำหรับเข้าสู่ระบบของคนไข้ (Patient Login) [เพิ่มเข้ามาใหม่]
+// ==========================================
+app.post('/api/patient/login', (req, res) => {
+  const { phone, password } = req.body;
+
+  if (!phone || !password) {
+    return res.status(400).json({ error: 'กรุณากรอกเบอร์โทรศัพท์และรหัสผ่านให้ครบถ้วน' });
+  }
+
+  // ค้นหาข้อมูลคนไข้จากเบอร์โทรศัพท์ในตาราง patient
+  const query = 'SELECT * FROM patient WHERE Phone = ?';
+
+  db.query(query, [phone], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(401).json({ message: 'ไม่พบเบอร์โทรศัพท์นี้ในระบบ' });
+    }
+
+    const patient = results[0];
+
+    // ตรวจสอบรหัสผ่าน (รองรับทั้งการเทียบกับ National_ID หรือช่องรหัสผ่านถ้ามี)
+    // ตรงนี้ถ้าใช้รหัสบัตรประชาชนที่หมอลงไว้ให้เป็นรหัสผ่าน ให้เทียบกับ patient.National_ID
+    const isValidPassword = (password === patient.National_ID) || (password === patient.Password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'รหัสผ่านไม่ถูกต้อง' });
+    }
+
+    // หากถูกต้อง ส่งข้อมูลไอดีและชื่อกลับไปให้แอป Flutter
+    res.json({
+      message: 'เข้าสู่ระบบสำเร็จ',
+      patient: {
+        PatientID: patient.PatientID,
+        First_Name: patient.First_Name,
+        Phone: patient.Phone
+      }
+    });
+  });
+});
+
+// ==========================================
 // 1. API ฝั่งแอปคนไข้ (Patient Mobile App API)
 // ==========================================
 
@@ -512,10 +556,6 @@ app.post('/api/doctor/exercise-library', (req, res) => {
 
 // ==========================================
 // เริ่มต้น Backend Server
-// ==========================================
-
-// ==========================================
-// เริ่มต้น Backend Server (รองรับ Cloud และ Local)
 // ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
