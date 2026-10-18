@@ -514,8 +514,10 @@ app.post('/api/doctor/exercise-library', (req, res) => {
 // เริ่มต้น Backend Server
 // ==========================================
 
-app.listen(3000, () => {
-  console.log(
-    'Backend เซิร์ฟเวอร์กำลังรันอยู่ที่ http://localhost:3000'
-  );
+// ==========================================
+// เริ่มต้น Backend Server (รองรับ Cloud และ Local)
+// ==========================================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Backend เซิร์ฟเวอร์กำลังรันอยู่ที่พอร์ต ${PORT}`);
 });
